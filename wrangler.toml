@@ -1,3 +1,6 @@
-name = "pylex-worker"
+name = "pylex"
 main = "worker.js"
 compatibility_date = "2026-05-30"
+[[kv_namespaces]]
+binding = "Cloudra"
+id = "e8f0ddebafe04078ac235b34bfcf79a5"
