@@ -291,6 +291,36 @@ export default {
         );
       }
     }
+    if (
+  path.startsWith("/img/") &&
+  request.method === "GET"
+) {
+  const appName =
+    decodeURIComponent(
+      path.replace("/img/", "")
+    );
+
+  const image =
+    await env.Cloudra.get(
+      `cloudra/img/${appName}`,
+      "arrayBuffer"
+    );
+
+  if (!image) {
+    return new Response(
+      "Image not found",
+      { status: 404 }
+    );
+  }
+
+  return new Response(image, {
+    headers: {
+      ...corsHeaders,
+      "Content-Type":
+        "image/png",
+    },
+  });
+    }
 
     return json(
       {
