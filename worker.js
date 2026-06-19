@@ -1,5 +1,18 @@
 export default {
   async fetch(request, env) {
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    };
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders,
+      });
+    }
+
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -9,28 +22,17 @@ export default {
         {
           status,
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
+            ...corsHeaders,
           },
         }
       );
     }
 
-    async function validateSecret(
-      secret
-    ) {
-      const key1 =
-        await env.Cloudra.get(
-          "cloudra-key-1"
-        );
-      const key2 =
-        await env.Cloudra.get(
-          "cloudra-key-2"
-        );
-      const key3 =
-        await env.Cloudra.get(
-          "cloudra-key-3"
-        );
+    async function validateSecret(secret) {
+      const key1 = await env.Cloudra.get("cloudra-key-1");
+      const key2 = await env.Cloudra.get("cloudra-key-2");
+      const key3 = await env.Cloudra.get("cloudra-key-3");
 
       if (!key1 && !key2 && !key3) {
         return {
@@ -55,8 +57,7 @@ export default {
           valid: false,
           response: json(
             {
-              error:
-                "Invalid secret key",
+              error: "Invalid secret key",
             },
             403
           ),
@@ -75,13 +76,11 @@ export default {
       let body;
 
       try {
-        body =
-          await request.json();
+        body = await request.json();
       } catch {
         return json(
           {
-            error:
-              "Invalid JSON",
+            error: "Invalid JSON",
           },
           400
         );
@@ -94,10 +93,7 @@ export default {
         operation,
       } = body;
 
-      if (
-        !secret ||
-        !operation
-      ) {
+      if (!secret || !operation) {
         return json(
           {
             error:
@@ -108,9 +104,7 @@ export default {
       }
 
       const auth =
-        await validateSecret(
-          secret
-        );
+        await validateSecret(secret);
 
       if (!auth.valid) {
         return auth.response;
@@ -119,8 +113,7 @@ export default {
       if (!backupId) {
         return json(
           {
-            error:
-              "Missing backupId",
+            error: "Missing backupId",
           },
           400
         );
@@ -128,22 +121,16 @@ export default {
 
       const kvKey = `cloudra/backups/${backupId}`;
 
-      if (
-        operation === "GET"
-      ) {
+      if (operation === "GET") {
         const value =
-          await env.Cloudra.get(
-            kvKey,
-            {
-              type: "json",
-            }
-          );
+          await env.Cloudra.get(kvKey, {
+            type: "json",
+          });
 
         if (!value) {
           return json(
             {
-              error:
-                "Backup not found",
+              error: "Backup not found",
             },
             404
           );
@@ -156,13 +143,9 @@ export default {
         });
       }
 
-      if (
-        operation ===
-        "CREATE"
-      ) {
+      if (operation === "CREATE") {
         if (
-          backupData ===
-          undefined
+          backupData === undefined
         ) {
           return json(
             {
@@ -175,9 +158,7 @@ export default {
 
         await env.Cloudra.put(
           kvKey,
-          JSON.stringify(
-            backupData
-          )
+          JSON.stringify(backupData)
         );
 
         return json({
@@ -189,13 +170,8 @@ export default {
         });
       }
 
-      if (
-        operation ===
-        "DELETE"
-      ) {
-        await env.Cloudra.delete(
-          kvKey
-        );
+      if (operation === "DELETE") {
+        await env.Cloudra.delete(kvKey);
 
         return json({
           success: true,
@@ -207,8 +183,7 @@ export default {
 
       return json(
         {
-          error:
-            "Invalid operation",
+          error: "Invalid operation",
         },
         400
       );
@@ -221,13 +196,11 @@ export default {
       let body;
 
       try {
-        body =
-          await request.json();
+        body = await request.json();
       } catch {
         return json(
           {
-            error:
-              "Invalid JSON",
+            error: "Invalid JSON",
           },
           400
         );
@@ -256,55 +229,42 @@ export default {
       }
 
       const auth =
-        await validateSecret(
-          secret
-        );
+        await validateSecret(secret);
 
       if (!auth.valid) {
         return auth.response;
       }
 
       if (
-        type !==
-          "CREATE" &&
-        type !==
-          "UPDATE"
+        type !== "CREATE" &&
+        type !== "UPDATE"
       ) {
         return json(
           {
-            error:
-              "Invalid type",
+            error: "Invalid type",
           },
           400
         );
       }
 
       try {
-        const base64 =
-          img.includes(",")
-            ? img.split(
-                ","
-              )[1]
-            : img;
+        const base64 = img.includes(",")
+          ? img.split(",")[1]
+          : img;
 
-        const binary =
-          atob(base64);
+        const binary = atob(base64);
 
-        const bytes =
-          new Uint8Array(
-            binary.length
-          );
+        const bytes = new Uint8Array(
+          binary.length
+        );
 
         for (
           let i = 0;
-          i <
-          binary.length;
+          i < binary.length;
           i++
         ) {
           bytes[i] =
-            binary.charCodeAt(
-              i
-            );
+            binary.charCodeAt(i);
         }
 
         await env.Cloudra.put(
@@ -315,8 +275,7 @@ export default {
         return json({
           success: true,
           message:
-            type ===
-            "CREATE"
+            type === "CREATE"
               ? "Image created successfully"
               : "Image updated successfully",
           appName,
@@ -326,8 +285,7 @@ export default {
           {
             error:
               "Failed to process image",
-            details:
-              String(err),
+            details: String(err),
           },
           500
         );
@@ -336,8 +294,7 @@ export default {
 
     return json(
       {
-        error:
-          "Route not found",
+        error: "Route not found",
       },
       404
     );
