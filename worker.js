@@ -68,6 +68,51 @@ export default {
         valid: true,
       };
     }
+    if (
+  path === "/api/img/delete" &&
+  request.method === "POST"
+) {
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return json(
+      { error: "Invalid JSON" },
+      400
+    );
+  }
+
+  const {
+    secret,
+    appName,
+  } = body;
+
+  if (!secret || !appName) {
+    return json(
+      {
+        error: "Missing secret or appName",
+      },
+      400
+    );
+  }
+
+  const auth = await validateSecret(secret);
+
+  if (!auth.valid) {
+    return auth.response;
+  }
+
+  await env.Cloudra.delete(
+    `cloudra/img/${appName}`
+  );
+
+  return json({
+    success: true,
+    message: "Image deleted successfully",
+    appName,
+  });
+    }
 
     if (
       path === "/api/backups/op" &&
